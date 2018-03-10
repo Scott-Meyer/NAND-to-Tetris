@@ -1,0 +1,179 @@
+
+class HangMan {
+    //variables
+    field String word;
+    field int memAddress;
+    field int maxIncorrect;
+    field int curIncorrect;
+    field String curSolved;
+    field char guess;
+    field int i;
+    field bool comp;
+
+    //Initilize
+    constructor HangMan new() {
+        let word = "difficult";
+        let curSolved = "_ _ _ _ _ _ _ _ _";
+        let maxIncorrect = 6;
+        let curIncorrect = 0;
+        do Output.printString("Hello world!\nyou");
+        do Output.println();      // New line
+        do Screen.clearScreen();
+
+        return this;
+    }
+
+    method void play() {
+        do Output.printString("Play is run");
+        while (curIncorrect < maxIncorrect) {
+
+            //end condition for winning
+            if (stringCompair("D I F F I C U L T", curSolved)) {
+                do Output.println();
+                do Output.println();
+                do Output.printString("YOU WIN. GOOD JOB.");
+                do Output.println();      // New line
+                do Sys.wait(1000);
+                return;
+            }
+            do printGame();
+            let guess = Keyboard.readChar();
+            do Sys.wait(500);  // let them see their guess for a while
+            if ((guess = 68)     // d
+            | (guess = 73)     // i
+            | (guess = 70)     // f
+            | (guess = 67)     // c
+            | (guess = 85)     // u
+            | (guess = 76)     // l
+            | (guess = 84)) {  // t
+                do updateSolved();
+            } else {
+                let curIncorrect = curIncorrect + 1;
+            }
+        }
+        let curIncorrect = curIncorrect + 1;
+        do printGame();
+        do Output.println();
+        do Output.println();
+        do Output.println();
+        do Output.printString("You HUNG! :'(");
+        do Output.println();
+        do Output.printString("    The correct word was: difficult");
+        do Sys.wait(1000);
+        return;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void draw(int location) {
+        let memAddress = 16384+location;
+        do Memory.poke(memAddress+0, 63);
+        do Memory.poke(memAddress+32, 33);
+        do Memory.poke(memAddress+64, 113);
+        do Memory.poke(memAddress+96, 81);
+        do Memory.poke(memAddress+128, 113);
+        do Memory.poke(memAddress+160, 33);
+        do Memory.poke(memAddress+192, 249);
+        do Memory.poke(memAddress+224, 33);
+        do Memory.poke(memAddress+256, 33);
+        do Memory.poke(memAddress+288, 81);
+        do Memory.poke(memAddress+320, 137);
+        do Memory.poke(memAddress+352, 1);
+        do Memory.poke(memAddress+384, 511);
+        do Memory.poke(memAddress+416, 0);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+
+    method void updateSolved() {
+        //d i f f i c   u   l   t
+        //012345678910111213141516
+        if (guess = 68) { //d
+            do curSolved.setCharAt(0, 68);
+        } else{ if ((guess = 73)) { //i
+            do curSolved.setCharAt(2, 73);
+            do curSolved.setCharAt(8, 73);
+        } else{ if ((guess = 70)) { //f
+            do curSolved.setCharAt(4, 70);
+            do curSolved.setCharAt(6, 70);
+        } else{ if ((guess = 67)) { //c
+            do curSolved.setCharAt(10, 67);
+        } else{ if ((guess = 85)) { //u
+            do curSolved.setCharAt(12, 85);
+        } else{ if ((guess = 76)) { //l
+            do curSolved.setCharAt(14, 76);
+        } else{ if ((guess = 84)) { //t
+            do curSolved.setCharAt(16, 84);
+        }}}}}}}
+        return;
+    }
+
+    method bool stringCompair(String str1, String str2) {
+        let comp = true;
+        let i = 0;
+        if (str1.length() = str2.length()) {
+            while (i < str1.length()) {
+                if (~(str1.charAt(i) = str2.charAt(i))) {
+                    let comp = false;
+                }
+                let i = i + 1;
+            }
+        } else {
+            return false;
+        }
+        return comp;
+    }
+
+    method void printGame() {
+        do Screen.clearScreen();
+        do Output.moveCursor(0,0);
+        do Output.printString("Good Luck, Don't Hang.");
+        do Output.println();      // New line
+        do Output.println();
+        do Output.printString("___________");
+        do Output.println();
+        do Output.printString("|         |");
+        do Output.println();
+        do Output.printString("|         |");
+        do Output.println();
+        do Output.printString("|");
+        if ((curIncorrect > 0)) {
+            do Output.printString("         o");
+        }
+        do Output.println();
+        do Output.printString("|");
+        if ((curIncorrect > 3)) {
+            do Output.printString("        /|\\");
+        } else{ if ((curIncorrect > 2)) {
+            do Output.printString("        /|");
+        } else{ if ((curIncorrect > 1)) {
+            do Output.printString("         |");
+        }}}
+        do Output.println();
+        do Output.printString("|");
+        if ((curIncorrect > 5)) {
+            do Output.printString("        / \\");
+        } else{ if ((curIncorrect > 4)) {
+            do Output.printString("        /");
+        }}
+        do Output.println();
+        do Output.printString("|");
+        do Output.println();
+        do Output.printString("|");
+        do Output.println();
+        do Output.printString("|");
+        do Output.println();
+        do Output.println();
+        do Output.println();
+        do Output.printString(curSolved);
+        do Output.println();
+        do Output.println();
+        do Output.printString("Guess a Letter: ");
+        return;
+    }
+
+}

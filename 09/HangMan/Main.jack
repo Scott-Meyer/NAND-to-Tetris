@@ -1,0 +1,28 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+
+// This is the main file for a hang-man game
+// compile to vm, then run in the provided vm
+class Main {
+
+    function void main() {
+        var HangMan game;
+
+        /* Prints some text using the standard library. */
+        do Output.printString("Hello world!\nyou");
+        do Output.println();      // New line
+        do Screen.clearScreen();
+
+
+        do Screen.setColor(true);
+        let game = HangMan.new();
+        do game.play();
+
+        do game.dispose();
+
+
+        //Done.
+        return;
+    }
+}
