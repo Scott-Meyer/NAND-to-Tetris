@@ -85,6 +85,11 @@ a_cmd labs str
     |head strnum `elem` ['0'..'9'] = '0' : fbinary num
     |tail str == "SCREEN" = "0100000000000000"
     |tail str == "KBD"    = "0110000000000000"
+    |tail str == "SP"     = "0000000000000000"
+    |tail str == "LCL"    = "0000000000000001"
+    |tail str == "ARG"    = "0000000000000010"
+    |tail str == "THIS"   = "0000000000000011"
+    |tail str == "THAT"   = "0000000000000100"
     |otherwise = '0' : fbinary (head [x | (lab, x)<-labs, lab==(tail str)])
     where num = read strnum :: Int
           strnum = if (head (tail str) == 'R') then tail (tail str) else tail str
@@ -120,7 +125,12 @@ symbols' i labs (x:xs)
                         , second /= 'R'
                         , second `notElem` ['0'..'9']
                         , tail x /= "SCREEN"
-                        , tail x /= "KBD"]
+                        , tail x /= "KBD"
+                        , tail x /= "SP"
+                        , tail x /= "LCL"
+                        , tail x /= "ARG"
+                        , tail x /= "THIS"
+                        , tail x /= "THAT"]
           second = head (tail x)
 
 
