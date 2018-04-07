@@ -2,7 +2,7 @@
 D=A
 @SP
 M=D
-@Sys.initRET0
+@Sys.initFUNCTIONRETURN0
 D=A
 @SP
 A=M
@@ -41,21 +41,21 @@ M=M+1
 D=M
 @LCL
 M=D
-@SP
-D=M
 @5
 D=D-A
 @ARG
 M=D
 @Sys.init
 0;JMP
-(Sys.initRET0)
-//////
+(Sys.initFUNCTIONRETURN0)
+//-------------------//
 // Sys
+//-------------------//
+////// BEGIN /////FunctionCalls/NestedCall/Sys.vm
 // function Sys.init 0
 (Sys.init)
 // call Sys.main 0
-@Sys.mainRET1
+@Sys.mainFUNCTIONRETURN1
 D=A
 @SP
 A=M
@@ -94,15 +94,13 @@ M=M+1
 D=M
 @LCL
 M=D
-@SP
-D=M
 @5
 D=D-A
 @ARG
 M=D
 @Sys.main
 0;JMP
-(Sys.mainRET1)
+(Sys.mainFUNCTIONRETURN1)
 // pop temp 1
 @R6
 D=A
@@ -131,7 +129,7 @@ M=D
 @SP
 M=M+1
 // call Sys.add12 1
-@Sys.add12RET2
+@Sys.add12FUNCTIONRETURN2
 D=A
 @SP
 A=M
@@ -170,15 +168,13 @@ M=M+1
 D=M
 @LCL
 M=D
-@SP
-D=M
 @6
 D=D-A
 @ARG
 M=D
 @Sys.add12
 0;JMP
-(Sys.add12RET2)
+(Sys.add12FUNCTIONRETURN2)
 // pop temp 0
 @R5
 D=A
@@ -203,6 +199,14 @@ M=M+1
 @LCL
 D=M
 @R13
+M=D
+@R13
+D=M
+@5
+D=D-A
+A=D
+D=M
+@R14
 M=D
 @SP
 M=M-1
@@ -246,14 +250,6 @@ D=D-A
 A=D
 D=M
 @LCL
-M=D
-@R13
-D=M
-@5
-D=D-A
-A=D
-D=M
-@R14
 M=D
 @R14
 A=M
@@ -314,6 +310,14 @@ M=M+1
 D=M
 @R13
 M=D
+@R13
+D=M
+@5
+D=D-A
+A=D
+D=M
+@R14
+M=D
 @SP
 M=M-1
 A=M
@@ -356,14 +360,6 @@ D=D-A
 A=D
 D=M
 @LCL
-M=D
-@R13
-D=M
-@5
-D=D-A
-A=D
-D=M
-@R14
 M=D
 @R14
 A=M

@@ -1,0 +1,73 @@
+
+
+
+class WormGame {
+
+    //Variables be here.
+    field Worm worm;    //This games worm.
+    field int direction;  //The direction the worm is going.
+
+    constructor WormGame new() {
+        do setup_screen();
+        return this;
+    }
+
+    method void setup_screen() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(1, 14, 509, 16);
+
+        do drawScore(0);
+
+        return;
+    }
+
+    method void dispose() {
+        do worm.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void drawScore(int score) {
+        do Output.moveCursor(0, 50);
+        do Output.printString("SCORE: ");
+        if (score < 10) { do Output.printString("0"); }
+        do Output.printInt(score);
+        return;
+    }
+
+   /** Moves the worm in the current direction. */
+   method void moveWorm() {
+      if (direction = 1) { do worm.moveUp(); }
+      if (direction = 2) { do worm.moveDown(); }
+      if (direction = 3) { do worm.moveLeft(); }
+      if (direction = 4) { do worm.moveRight(); }
+      do Sys.wait(4);  // delays the next movement
+      return;
+   }
+
+    method void run() {
+        var char key;
+
+        while(true) {
+
+            // waits for a key to be pressed
+            while (key = 0) {
+                let key = keyboard.keyPressed();
+                do moveWorm();
+            }
+
+            if (key = 131) { let direction = 1; }   // up arrow
+            if (key = 133) { let direction = 2; }   // down arrow
+            if (key = 130) { let direction = 3; }   // left arrow
+            if (key = 132) { let direction = 4; }   // right arrow
+
+            // waits for the key to be released
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+                do moveWorm();
+            }
+        }
+        return;
+    }
+
+}

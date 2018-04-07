@@ -48,10 +48,10 @@ M=D
 @Sys.init
 0;JMP
 (Sys.initFUNCTIONRETURN0)
-/-------------------/
+//-------------------//
 // Class1
-/-------------------/
-////// BEGIN /////D:/Documents/nand2tetris/projects/08/FunctionCalls/StaticsTest/Class1.vm
+//-------------------//
+////// BEGIN /////../FunctionCalls/StaticsTest/Class1.vm
 // function Class1.set 0
 (Class1.set)
 // push argument 0
@@ -119,7 +119,7 @@ D=M
 D=D-A
 A=D
 D=M
-@R13
+@R14
 M=D
 @SP
 M=M-1
@@ -164,7 +164,7 @@ A=D
 D=M
 @LCL
 M=D
-@R13
+@R14
 A=M
 0;JMP
 // function Class1.get 0
@@ -208,7 +208,7 @@ D=M
 D=D-A
 A=D
 D=M
-@R13
+@R14
 M=D
 @SP
 M=M-1
@@ -253,13 +253,13 @@ A=D
 D=M
 @LCL
 M=D
-@R13
+@R14
 A=M
 0;JMP
-/-------------------/
+//-------------------//
 // Class2
-/-------------------/
-////// BEGIN /////D:/Documents/nand2tetris/projects/08/FunctionCalls/StaticsTest/Class2.vm
+//-------------------//
+////// BEGIN /////../FunctionCalls/StaticsTest/Class2.vm
 // function Class2.set 0
 (Class2.set)
 // push argument 0
@@ -327,7 +327,7 @@ D=M
 D=D-A
 A=D
 D=M
-@R13
+@R14
 M=D
 @SP
 M=M-1
@@ -372,7 +372,7 @@ A=D
 D=M
 @LCL
 M=D
-@R13
+@R14
 A=M
 0;JMP
 // function Class2.get 0
@@ -416,7 +416,7 @@ D=M
 D=D-A
 A=D
 D=M
-@R13
+@R14
 M=D
 @SP
 M=M-1
@@ -461,13 +461,13 @@ A=D
 D=M
 @LCL
 M=D
-@R13
+@R14
 A=M
 0;JMP
-/-------------------/
+//-------------------//
 // Sys
-/-------------------/
-////// BEGIN /////D:/Documents/nand2tetris/projects/08/FunctionCalls/StaticsTest/Sys.vm
+//-------------------//
+////// BEGIN /////../FunctionCalls/StaticsTest/Sys.vm
 // function Sys.init 0
 (Sys.init)
 // push constant 6

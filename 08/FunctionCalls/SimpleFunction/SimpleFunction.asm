@@ -2,55 +2,10 @@
 D=A
 @SP
 M=D
-@Sys.initRET0
-D=A
-@SP
-A=M
-M=D
-@SP
-M=M+1
-@LCL
-D=M
-@SP
-A=M
-M=D
-@SP
-M=M+1
-@ARG
-D=M
-@SP
-A=M
-M=D
-@SP
-M=M+1
-@THIS
-D=M
-@SP
-A=M
-M=D
-@SP
-M=M+1
-@THAT
-D=M
-@SP
-A=M
-M=D
-@SP
-M=M+1
-@SP
-D=M
-@LCL
-M=D
-@5
-D=D-A
-@ARG
-M=D
-@Sys.init
-0;JMP
-(Sys.initRET0)
-//////
+//-------------------//
 // SimpleFunction
-//////D:/Documents/nand2tetris/projects/08/FunctionCalls/SimpleFunction/SimpleFunction.vm  Begin
+//-------------------//
+////// BEGIN /////FunctionCalls/SimpleFunction/SimpleFunction.vm
 // function SimpleFunction.test 2
 (SimpleFunction.test)
 D=0
@@ -164,7 +119,7 @@ D=M
 D=D-A
 A=D
 D=M
-@R13
+@R14
 M=D
 @SP
 M=M-1
@@ -209,6 +164,6 @@ A=D
 D=M
 @LCL
 M=D
-@R13
+@R14
 A=M
 0;JMP

@@ -1,8 +1,19 @@
 #lang racket
+
+
+;Require the while-loop package. Including this gets around one of my main problems with functional.
+;If I think of a solution in an iterative way, I can write it in an iterative way.
 (require dyoo-while-loop)
 
+
+
+;When adding a comment to ASM, preface with COMMENT
 (define COMMENT "//")
 
+;; Object used when translating VM files.
+;; Will advance through the file one step at a time in sync with a CodeWriter% object.
+;; When tranlsating a VM file, depending on the return of (command_type), information will be sent to a CodeWriter%
+;; that outputs translating.
 (define Parser%
   (class object%
     (init fname)
@@ -97,6 +108,9 @@
       (begin
         (initialize_file))))
 
+;; This object is responsable for writing code. Is to be run in parallel with a Parser% object.
+;; Mode of operation is called depending on output from Parser% object.
+;; (write_arithmetic), (write_push_pop "C_POP"), (write_push_pop "C_PUSH")
 (define CodeWriter%
   (class object%
     (init asm_filename)
@@ -177,6 +191,7 @@
     
       
     ;;;Begin internal functions
+    ;ignore that this is public, weird errors.
     (define/public (write command)
       (begin
         (printf "ASM: ~a \n" command)
@@ -255,13 +270,19 @@
     (begin
       (set! addresses (address_dict)))))
 
+;;This is the main object/class.
+;;(make-object Main% <PATH>) will result in translating the VM at <PATH>
 (define Main%
   (class object%
     (init file_path)
     (super-new)
-    (define cw null)
+
+    ;; Class attributes, to be filled and used later. MUTABLE.
+    ;; List of all VM/ASM files (incase of folder) filled by (parse_files file_path)
     (define vm_files null)
     (define asm_file null)
+    ;; List of all cw objects, filled by Main% and (translate vm_file)
+    (define cw null)
 
     (define (parse_files file_path)
       (if (string-contains? file_path ".vm")
@@ -290,6 +311,7 @@
            (send parser advance)
            ;(send cw write (string-append "// " (send parser curr_instruction_pub)))
            ;(printf "command_type: ~a \n" (send parser command_type))
+           ;;; Depending on parser-command_type, run aproperiate cw-write function.
            (cond
              [(equal? (send parser command_type) "C_PUSH")
               (send cw write_push_pop "C_PUSH" (send parser arg1) (send parser arg2))]
@@ -298,6 +320,7 @@
              [(equal? (send parser command_type) "C_ARITHMETIC")
               (send cw write_arithmetic (send parser arg1))])))))
 
+    ;;When main is created, run this code block. Essentially, Parse, translate, write for all VM files.
     (begin
       (parse_files file_path)
       (set! cw (make-object CodeWriter% asm_file))
@@ -307,4 +330,18 @@
 
 ;;;Run the actual program
 ;;;Make an instance of Main and pass it the arguement
-(define main (make-object Main% (first (vector->list (current-command-line-arguments)))))
+;(define main (make-object Main% (first (vector->list (current-command-line-arguments)))))
+
+;;; Change main function to be an input loop. This is a far more robust form of running the program.
+;;; TODO: Add error catching for input, so program doesn't crash when the folder does not exist.
+(define main
+  (begin
+    (display "Welcome to the Racket VMtranslator. This is a implementation of project 07 for NAND to Tetris.\n")
+    (let loop()
+      (display "Enter a filename, or folder that contains a VM. Output will be saved into the given folder. \n")
+      (display "    Path: ")
+      (define a (read-line (current-input-port) 'any))
+      (make-object Main% a)
+      (loop))))
+
+;;; TODO: Better commenting.

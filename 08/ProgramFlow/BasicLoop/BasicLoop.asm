@@ -1,6 +1,7 @@
-//////
+//-------------------//
 // BasicLoop
-//////D:/Documents/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm  Begin
+//-------------------//
+////// BEGIN /////ProgramFlow/BasicLoop/BasicLoop.vm
 // push constant 0
 @0
 D=A

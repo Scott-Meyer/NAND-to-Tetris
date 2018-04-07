@@ -7,6 +7,7 @@
   (class object%
     (init fname)
     (super-new)
+    ;(printf "~a" fname)
     (define vm (file->lines fname))
     (define commands (make-hash '(("add" . "C_ARITHMETIC")
                                   ("sub" . "C_ARITHMETIC")
@@ -43,7 +44,9 @@
       (not (null? next_instruction)))
 
     (define/public (command_type)
-      (dict-ref commands (list-ref (words (string-downcase curr_instruction)) 0)))
+      (begin
+        ;(printf "Cmd?: ~a" (list-ref (words (string-downcase curr_instruction)) 0))
+      (dict-ref commands (list-ref (words (string-downcase curr_instruction)) 0))))
 
     (define/public (arg1)
       (if (equal? (command_type) "C_ARITHMETIC")
@@ -63,7 +66,7 @@
           null
           (begin
             (set! curr_line (+ curr_line 1))
-            (printf "fref: ~a \n" (string-normalize-spaces (string-trim (list-ref file (- curr_line 1)))))
+            ;(printf "fref: ~a -- ~a\n" (string-normalize-spaces (string-trim (list-ref file (- curr_line 1)))) (is_instruction (string-normalize-spaces (string-trim (list-ref file (- curr_line 1))))))
             (string-normalize-spaces (string-trim (list-ref file (- curr_line 1)))))))
 
     (define (initialize_file)
@@ -80,14 +83,16 @@
                        line))]
         (if (null? line2)
             (set! next_instruction null)
-            (set! next_instruction (first (string-split line2 COMMENT))))))
+            (if (is_instruction line2)
+                (set! next_instruction (first (string-split line2 COMMENT)))
+                (load_next_instruction (fref vm))))))
 
     (define (is_instruction line)
       (cond
         [(< (string-length line) 2) #f]
         [(equal? (substring line 0 2) COMMENT) #f]
         [else #t]))
-
+    
     (define (argn n)
       (if (>= (length (words curr_instruction)) (+ n 1))
           (list-ref (words curr_instruction) n)
@@ -104,13 +109,27 @@
     (define curr_file null)
     (define addresses null)
     (define bool_count 0)
+    (define line_count 0)
+    (define call_count 0)
     (define asm (list))
     (define asm_filename2 asm_filename)
 
 
     ;;;Begin external facing functions
+    (define/public (write_init)
+      (begin
+        (write "@256")
+        (write "D=A")
+        (write "@SP")
+        (write "M=D")
+        (write_call "Sys.init" 0)))
+    
     (define/public (set_file_name vm_filename)
-      (set! curr_file (first (string-split (last (string-split vm_filename "/")) "."))))
+      (begin
+        (set! curr_file (first (string-split (last (string-split vm_filename "/")) ".")))
+        (write "/-------------------/" #:code #f)
+        (write (string-append "// " curr_file) #:code #f)
+        (write "/-------------------/" #:code #f)))
 
     (define/public (write_arithmetic operation)
       (begin
@@ -142,11 +161,11 @@
              (write (string-append "@ENDBOOL" (number->string bool_count)))
              (write "0;JMP")
 
-             (write (string-append "(BOOL" (number->string bool_count) ")"))
+             (write (string-append "(BOOL" (number->string bool_count) ")") #:code #f)
              (set_A_to_stack)
              (write "M=-1")
 
-             (write (string-append "(ENDBOOL" (number->string bool_count) ")"))
+             (write (string-append "(ENDBOOL" (number->string bool_count) ")") #:code #f)
              (set! bool_count (+ bool_count 1)))]
           [else (raise_unknown operation)])
           (increment_SP)))
@@ -170,6 +189,105 @@
                                       (write "M=D"))]
           [else (raise_unknown command)])))
 
+    (define/public (write_label label)
+      (write (string-append "(" curr_file "$" label ")") #:code #f))
+
+    (define/public (write_goto label)
+      (begin
+        (write (string-append "@" curr_file "$" label))
+        (write "0;JMP")))
+
+    (define/public (write_if label)
+      (begin
+        (pop_stack_to_D)
+        (write (string-append "@" curr_file "$" label))
+        (write "D;JNE")))
+
+    (define/public (write_function function_name num_locals)
+      (begin
+        (write (string-append "(" function_name ")") #:code #f)
+
+        (for ([i (in-range num_locals)])
+          (begin
+            (write "D=0")
+            (push_D_to_stack)))))
+
+    (define/public (write_call function_name num_args)
+      (define RET (string-append function_name "FUNCTIONRETURN" (number->string call_count)))
+      (begin
+        (set! call_count (+ call_count 1))
+
+        (write (string-append "@" RET))
+        (write "D=A")
+        (push_D_to_stack)
+
+        (for ([address '("@LCL" "@ARG" "@THIS" "@THAT")])
+          (begin
+            (write address)
+            (write "D=M")
+            (push_D_to_stack)))
+
+        (write "@SP")
+        (write "D=M")
+        (write "@LCL")
+        (write "M=D")
+
+        (write (string-append "@" (number->string (+ num_args 5))))
+        (write "D=D-A")
+        (write "@ARG")
+        (write "M=D")
+
+        (write (string-append "@" function_name))
+        (write "0;JMP")
+
+        (write (string-append "(" RET ")") #:code #f)))
+
+    (define/public (write_return)
+      (define FRAME "R13")
+      (define RET "R14")
+
+      (begin
+        (write "@LCL")
+        (write "D=M")
+        (write (string-append "@" FRAME))
+        (write "M=D")
+
+        (write (string-append "@" FRAME))
+        (write "D=M")
+        (write "@5")
+        (write "D=D-A")
+        (write "A=D")
+        (write "D=M")
+        (write (string-append "@" FRAME))
+        (write "M=D")
+
+        (pop_stack_to_D)
+        (write "@ARG")
+        (write "A=M")
+        (write "M=D")
+
+        (write "@ARG")
+        (write "D=M")
+        (write "@SP")
+        (write "M=D+1")
+
+        (define offset 1)
+        (for ([address (list "@THAT" "@THIS" "@ARG" "@LCL")])
+          (begin
+            (write (string-append "@" FRAME))
+            (write "D=M")
+            (write (string-append "@" (number->string offset)))
+            (write "D=D-A")
+            (write "A=D")
+            (write "D=M")
+            (write address)
+            (write "M=D")
+            (set! offset (+ offset 1))))
+
+        (write (string-append "@" FRAME))
+        (write "A=M")
+        (write "0;JMP")))
+    
     (define/public (close)
       (begin
         (printf "~a" asm_filename2)
@@ -177,9 +295,16 @@
     
       
     ;;;Begin internal functions
-    (define/public (write command)
-      (begin
-        (printf "ASM: ~a \n" command)
+    (define/public write
+      (lambda (command #:code [code #t])
+          ;(let ([myCommand command])
+          ;  (begin
+          ;    (if code
+          ;        (begin
+          ;          (set! myCommand (string-append myCommand " // " (number->string line_count)))
+          ;          (set! line_count (+ line_count 1)))
+          ;        null)
+          ;    (set! asm (cons myCommand asm))))))
         (set! asm (cons command asm))))
 
     (define (raise_unknown argument)
@@ -189,16 +314,16 @@
       (define address (dict-ref addresses segment null))
       (cond
         [(equal? segment "constant")
-         (write (string-append "@" index))]
+         (write (string-append "@" (number->string index)))]
         [(equal? segment "static")
-         (write (string-append "@" curr_file "." index))]
+         (write (string-append "@" curr_file "." (number->string index)))]
         [(member segment '("pointer" "temp"))
-         (write (string-append "@R" (number->string (+ address (string->number index)))))]
+         (write (string-append "@R" (number->string (+ address index))))]
         [(member segment '("local" "argument" "this" "that"))
          (begin
            (write (string-append "@" address))
            (write "D=M")
-           (write (string-append "@" index))
+           (write (string-append "@" (number->string index)))
            (write "A=D+A"))]
         [else
          (raise_unknown(segment))]))
@@ -218,13 +343,11 @@
         (write "@SP")
         (write "A=M")
         (write "M=D")
-        (write "@SP")
-        (write "M=M+1")))
+        (increment_SP)))
 
     (define (pop_stack_to_D)
       (begin
-        (write "@SP")
-        (write "M=M-1")
+        (decrement_SP)
         (write "A=M")
         (write "D=M")))
 
@@ -276,26 +399,56 @@
       (begin
         (define parser (make-object Parser% vm_file))
         (send cw set_file_name vm_file)
+        (send cw write (string-append "////// BEGIN /////" vm_file) #:code #f)
         (while (send parser has_more_commands)
          (begin
            (send parser advance)
-           (send cw write (string-append "// " (send parser curr_instruction_pub)))
+           (send cw write (string-append "// " (send parser curr_instruction_pub)) #:code #f)
            ;(printf "command_type: ~a \n" (send parser command_type))
            (cond
              [(equal? (send parser command_type) "C_PUSH")
-              (send cw write_push_pop "C_PUSH" (send parser arg1) (send parser arg2))]
+              (send cw write_push_pop "C_PUSH" (send parser arg1) (string->number (send parser arg2)))]
              [(equal? (send parser command_type) "C_POP")
-              (send cw write_push_pop "C_POP" (send parser arg1) (send parser arg2))]
+              (send cw write_push_pop "C_POP" (send parser arg1) (string->number (send parser arg2)))]
              [(equal? (send parser command_type) "C_ARITHMETIC")
-              (send cw write_arithmetic (send parser arg1))])))))
+              (send cw write_arithmetic (send parser arg1))]
+             [(equal? (send parser command_type) "C_LABEL")
+              (send cw write_label (send parser arg1))]
+             [(equal? (send parser command_type) "C_GOTO")
+              (send cw write_goto (send parser arg1))]
+             [(equal? (send parser command_type) "C_IF")
+              (send cw write_if (send parser arg1))]
+             [(equal? (send parser command_type) "C_FUNCTION")
+              (send cw write_function (send parser arg1) (string->number (send parser arg2)))]
+             [(equal? (send parser command_type) "C_CALL")
+              (send cw write_call (send parser arg1) (string->number (send parser arg2)))]
+             [(equal? (send parser command_type) "C_RETURN")
+              (send cw write_return)])))))
 
     (begin
       (parse_files file_path)
       (set! cw (make-object CodeWriter% asm_file))
+      (if (string-contains? (foldl (λ(fi str) (string-append str (file->string fi))) "" vm_files) "function")
+          (send cw write_init)
+          null)
       (for ([vm_file vm_files])
         (translate vm_file))
       (send cw close))))
 
 ;;;Run the actual program
 ;;;Make an instance of Main and pass it the arguement
-(define main (make-object Main% "D:/Documents/nand2tetris/projects/07/MemoryAccess/BasicTest/BasicTest.vm"))
+;(define main (make-object Main% (first (vector->list (current-command-line-arguments)))))
+
+;;; Change main function to be an input loop. This is a far more robust form of running the program.
+;;; TODO: Add error catching for input, so program doesn't crash when the folder does not exist.
+(define main
+  (begin
+    (display "Welcome to the Racket VMtranslator. This is a implementation of project 08 for NAND to Tetris.\n")
+    (let loop()
+      (display "Enter a filename, or folder that contains a VM. Output will be saved into the given folder. \n")
+      (display "    Path: ")
+      (define a (read-line (current-input-port) 'any))
+      (make-object Main% a)
+      (loop))))
+
+;;; TODO: Better commenting.

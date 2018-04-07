@@ -1,0 +1,50 @@
+    identifier = '[\\w_][a-zA-Z0-9_]*'
+    integerConstant = '\\d+'
+    StringConstant = '".*"'
+    Class = ' '
+    classVarDec = ''
+    Type = {'int', 'char', 'boolean', 'classname'}
+    subroutineDec = {'constructor', 'function', 'methid'}
+    parameterList = ''
+    varName = identifier
+    varDec = ' *var *'+ varName +'(( *;)|( *, *'+ varName +')+;)'
+    className = identifier
+    subroutineName = identifier
+
+
+    letStatement = ''
+    ifStatement = ''
+    whileStatement = ''
+    doStatement = ''
+    ReturnStatement = ''
+    statement = [letStatement, ifStatement, whileStatement, doStatement, returnStatement]
+
+    op = {'+', '-', '*', '/', '&', '|', '<', '>', '='}
+    unaryOp = {'-', '~'}
+    KeywordConstant = {'true', 'false', 'null', 'this'}
+
+    line_can_be = [varDec, subroutineDec, classVarDec, Class]
+
+    with open(file) as f:
+        lines = f.readlines()
+    output = []
+
+    def unkown_line(pos):
+        #get our line
+        line = lines[pos]
+        #strip out extra white spaces
+        line = line.strip()
+
+        #Check to see if line is a comment or empty, if so just print it
+        if line is empty or line[:2] is '//':
+            output.append('Line '+ pos +': ' + line)
+        #line not comment or empty
+        else:
+            #get the first word in our line
+            (firstWord, _) = line.split(maxsplit=1)
+
+    for line in open(file):
+        print(line)
+
+    re.match('pattern', 'thing') #true/false
+    print('Stuff')

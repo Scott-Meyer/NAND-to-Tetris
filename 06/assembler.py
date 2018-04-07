@@ -79,3 +79,6 @@ jmpMap = {
     "JMP":"111"
 }
 
+labels = {}
+
+fillLabels(String codes)

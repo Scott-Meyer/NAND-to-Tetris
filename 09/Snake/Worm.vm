@@ -1,0 +1,206 @@
+function Worm.new 0
+push constant 5
+call Memory.alloc 1
+pop pointer 0
+push pointer 0
+return
+function Worm.dispose 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Worm.moveUp 0
+push argument 0
+pop pointer 0
+push this 3
+push constant 1
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 4
+add
+push constant 1
+sub
+push this 2
+push this 4
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+push this 3
+push constant 2
+sub
+pop this 3
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 2
+push this 4
+add
+push this 3
+push constant 1
+add
+call Screen.drawRectangle 4
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Worm.moveDown 0
+push argument 0
+pop pointer 0
+push this 3
+push this 4
+add
+push constant 254
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 2
+push this 4
+add
+push this 3
+push constant 1
+add
+call Screen.drawRectangle 4
+pop temp 0
+push this 3
+push constant 2
+add
+pop this 3
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 4
+add
+push constant 1
+sub
+push this 2
+push this 4
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Worm.moveLeft 0
+push argument 0
+pop pointer 0
+push this 2
+push constant 1
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 4
+add
+push constant 1
+sub
+push this 3
+push this 2
+push this 4
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+push this 2
+push constant 2
+sub
+pop this 2
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 2
+push constant 1
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+label IF_FALSE0
+push constant 0
+return
+function Worm.moveRight 0
+push argument 0
+pop pointer 0
+push this 2
+push this 4
+add
+push constant 510
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 3
+push this 2
+push constant 1
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+push this 2
+push constant 2
+add
+pop this 2
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 2
+push this 4
+add
+push constant 1
+sub
+push this 3
+push this 2
+push this 4
+add
+push this 3
+push this 4
+add
+call Screen.drawRectangle 4
+pop temp 0
+label IF_FALSE0
+push constant 0
+return

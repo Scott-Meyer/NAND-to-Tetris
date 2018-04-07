@@ -175,5 +175,4 @@ class HangMan {
         do Output.printString("Guess a Letter: ");
         return;
     }
-
 }

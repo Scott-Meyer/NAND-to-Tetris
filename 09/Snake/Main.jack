@@ -1,0 +1,27 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+
+// This is the main file for a Worms game.
+// compile to vm, then run in the provided vm
+class Main {
+
+    function void main() {
+        var WormGame game;
+
+        /* Prints some text using the standard library. */
+        do Output.printString("Hello world!\nyou");
+        do Output.println();      // New line
+        do Screen.clearScreen();
+
+        do Screen.setColor(true);
+        let game = WormGame.new();
+
+        do game.run();      // Run the game.
+
+        do game.dispose();  // Clean up the game and ram.
+
+        //Done.
+        return;
+    }
+}
