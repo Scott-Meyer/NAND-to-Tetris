@@ -39,7 +39,7 @@ def tokenize(clean_file):
             return {'type':'keyword', 'val':s}
         #stringConstant
         elif s[0] == '"' and s[-1:] == '"':
-            return {'type':'stringConstant', 'val':s}
+            return {'type':'stringConstant', 'val':s[1:-1]}
         #integerConstant
         elif re.match('\\d+', s):
             return {'type':'integerConstant', 'val':s}
@@ -53,7 +53,7 @@ def tokenize(clean_file):
     items = []
     in_string = False
     tmp = ''
-    for i, char in zip(range(len(clean_file)-1), clean_file):
+    for i, char in zip(range(len(clean_file)), clean_file):
         if in_string:
             tmp += char
             if char == '"':
@@ -64,12 +64,17 @@ def tokenize(clean_file):
                     items.append(handle_non_symbol(tmp))
                     tmp = ''
                 if not char == ' ':
+                    if char == '<':
+                        char = '&lt;'
+                    if char == '>':
+                        char = '&gt;'
+                    if char == '&':
+                        char = '&amp;'
                     items.append({'type':'symbol', 'val':char})
             else:
                 if char == '"':
                     in_string = True
                 tmp += char
-    
     return items
     
 
@@ -80,7 +85,8 @@ def clean_file(file):
     :param str file: location of a file to clean
     :rtype: str
     '''
-    de_commented = re.sub('\\/\\/.*|\\/\\*(?s:.)*\\*\\/', '', open(file).read())
+    #de_commented = re.sub('\\/\\/.*|\\/\\*(?s:.)*\\*\\/', '', open(file).read())
+    de_commented = re.sub('\/\/.*|\/\*[^*]*\*+(?:[^\/*][^*]*\*+)*\/', '', open(file).read())
     #remove blank lines.
     striped = os.linesep.join([s for s in de_commented.splitlines() if s.strip()])
     return multireplace(striped, {'\r':' ', '\n':' ', '\t': ' '}).strip()
@@ -112,24 +118,24 @@ def token_parser(tokens):
         pr,
         '</class>'
     ]
-
-    print(r)
     return r
 
-def parse_inner(tokens, prefix=None, end=None):
+def parse_inner(tokens, prefix=None, end=None, start=None):
     '''Parse the inner part of {}
     :rtype: [<> [...] <>], tokens'''
     def token_check(v):
         return tokens[0]['type'] == 'keyword' and tokens[0]['val'] == v
 
-    if end is None:
-        end = get_end(tokens[0])
-
     def is_end(token):
         return token == end
 
-    r = [xml_token(tokens[0])] #Value we are going to return
-    tokens = tokens[1:] #slice off the opening, we already added it.
+    if end is None:
+        end = get_end(tokens[0])
+
+    r = []
+    if start is None:
+        r = [xml_token(tokens[0])] #Value we are going to return
+        tokens = tokens[1:] #slice off the opening, we already added it.
 
     if prefix is not None:
         r = prefix + r
@@ -137,7 +143,7 @@ def parse_inner(tokens, prefix=None, end=None):
     #Parse overf all things inside where wheverever we are
     while tokens and not is_end(tokens[0]):
         #classVarDec
-        if token_check('static'):
+        if token_check('static') or token_check('field'):
             tl, tokens = parse_var(tokens, 'classVarDec')
             r = r + tl
         #varDec
@@ -145,7 +151,7 @@ def parse_inner(tokens, prefix=None, end=None):
             tl, tokens = parse_var(tokens, 'varDec')
             r = r + tl
         #subroutineDec
-        elif token_check('function'):
+        elif token_check('function') or token_check('method') or token_check('constructor') :
             rt, tokens = parse_subroutine(tokens)
             r = r + rt
         #letStatement
@@ -161,8 +167,11 @@ def parse_inner(tokens, prefix=None, end=None):
             rt, tokens = parse_return(tokens)
             r = r + rt
         #if/else
-        elif token_check('if')
-            rt, tokens = parse_return(tokens)
+        elif token_check('if'):
+            rt, tokens = parse_if(tokens)
+            r = r + rt
+        elif token_check('while'):
+            rt, tokens = parse_while(tokens)
             r = r + rt
         else:
             break
@@ -172,6 +181,38 @@ def parse_inner(tokens, prefix=None, end=None):
         r.append(xml_token(tokens[0]))            
         return r, tokens[1:]
     return r, tokens
+
+def parse_while(tokens):
+    ''''''
+    return parse_if(tokens, tag='whileStatement')
+
+def sub_body(tokens):
+    '''parse all the vars ouside the statement clause of the XML'''
+    def token_check(v):
+        return tokens[0]['type'] == 'keyword' and tokens[0]['val'] == v
+    end = get_end(tokens[0])
+    r = [xml_token(tokens[0])] #Value we are going to return
+    tokens = tokens[1:] #slice off the opening, we already added it.
+
+    #Parse overf all things inside where wheverever we are
+    while tokens:
+        #classVarDec
+        if token_check('static'):
+            tl, tokens = parse_var(tokens, 'classVarDec')
+            r = r + tl
+        #varDec
+        elif token_check('var'):
+            tl, tokens = parse_var(tokens, 'varDec')
+            r = r + tl
+        else:
+            break
+
+    states, tokens = parse_inner(tokens, end=end, start=1)
+    states_end = states[-1:]
+    r = r + ['<statements>'] + [states[:-1]] + ['</statements>'] + states_end
+    return r, tokens
+
+
 
 def get_end(token):
     ''' Get the ending token to an opening token
@@ -184,6 +225,7 @@ def get_end(token):
     elif token == {'type':'symbol', 'val':'['}:
         return {'type':'symbol', 'val':']'}
     else:
+        print("NO END ERROR QUIT")
         print(token)
         sys.exit()
 
@@ -194,6 +236,11 @@ def xml_token(token):
     :rtype: str
     '''
     return '<'+token['type']+'> '+token['val']+' </'+token['type']+'>'
+def xml_term(token):
+    return [
+        '<term>',
+        ['<'+token['type']+'> '+token['val']+' </'+token['type']+'>'],
+        '</term>']
 
 def parse_var(tokens, tag):
     '''Parse a var/static
@@ -222,7 +269,8 @@ def parse_subroutine(tokens):
         xml_token(tokens[2])  #identifier name
     ]
     pl, tokens = param_list(tokens[3:])
-    bl, tokens = parse_inner(tokens)
+    parse_start = tokens[0]
+    bl, tokens = sub_body(tokens)
     dec = dec + pl + ['<subroutineBody>', bl, '</subroutineBody>']
     
     r = [
@@ -230,19 +278,19 @@ def parse_subroutine(tokens):
     ]
     return r, tokens
 
-def param_list(tokens):
+def param_list(tokens, tag='parameterList'):
     '''Handle the () part of a subroutineDec
     :rtype: [<><> [...] <><>]'''
-    r = [xml_token(tokens[0]), '<parameterList>']
+    r = [xml_token(tokens[0]), '<'+tag+'>']
     pl = []
     i = 1
     for t in tokens[1:]:
         i += 1
         if t == get_end(tokens[0]):
             if pl:
-                r = r + [pl, '</parameterList>', xml_token(t)]
+                r = r + [pl, '</'+tag+'>', xml_token(t)]
             else: 
-                r = r + ['</parameterList>', xml_token(t)]
+                r = r + ['</'+tag+'>', xml_token(t)]
             break
         else:
             pl.append(xml_token(t))
@@ -253,60 +301,160 @@ def parse_let(tokens):
     TODO: term
     :rtype:[<>[<><><><>[...]<><>]<>]'''
     r = []
+    used = 0
     for i in range(3):
         r.append(xml_token(tokens[i]))
-    r.append('<expression>')
-    expressions, tokens = expression(tokens[3:], ';')
-    r = r + [
-        expressions,
-        xml_token(tokens[0])
-    ]
+    if tokens[2]['val'] == '=':
+        used = 3
+    else:
+        el, tokens = expression(tokens[3:], [']'])
+        r = r + el + [xml_token(tokens[0]), xml_token(tokens[1])]
+        used = 2
+    expressions, tokens = expression(tokens[used:], [';'])
+    r = r + expressions + [xml_token(tokens[0])]
     return ['<letStatement>']+[r]+['</letStatement>'], tokens[1:]
 
 
 def expression(tokens, ender):
     i = -1
     expressions = []
-    for t in tokens:
+    interm = False
+    term = []
+    while tokens:
         i += 1
-        if not t['val'] == ender:
-            expressions.append(xml_token(t))
+        t = tokens[i]
+        if not t['val'] in ender:
+            if t['type'] != 'symbol' or t['val'] == '.' or t['val'] == '(' or t['val'] == ')':
+                if not interm:
+                    expressions.append('<term>')
+                    interm = True
+                term.append(xml_token(t))
+
+                #expression list of functions.
+                if t['val'] == '(':
+                    if not re.match('\w+', tokens[i-1]['val']):
+                        er, tokens = expression(tokens[i+1:], [')'])
+                        i = -1
+                        er = [er[0]] + [ ['<term>'] + er[1:-1] + ['</term>']] + er[-1:] + [xml_token(tokens[0])]
+                        tokens = tokens[1:]
+                        term = term + [er]
+                    else:
+                        '''
+                        er, tokens = expression(tokens[i+1:], [')'])
+                        i = -1
+                        if er[1]:
+                            term = term + ['<expressionList>']+[er]+['</expressionList>']
+                        else:
+                            term = term + ['<expressionList>', '</expressionList>']
+                        '''
+                        er, tokens = expression_list(tokens[i+1:], [')'])
+                        term = term + er + [xml_token(tokens[0])]
+                        tokens = tokens[1:]
+                        i = -1
+            elif t['val'] == '[' or t['val'] == ']':
+                if not interm:
+                    expressions.append('<term>')
+                    interm = True
+                term.append(xml_token(t))
+
+                #expression inside []
+                if t['val'] == '[':
+                    er, tokens = expression(tokens[i+1:], [']'])
+                    i = -1
+                    term = term + er
+            else:
+                if interm:
+                    expressions.append(term)
+                    expressions.append('</term>')
+                    term = []
+                    interm = False
+                expressions.append(xml_token(t))
         else:
             break
+    if interm:
+        expressions.append(term)
+        expressions.append('</term>')
     return ['<expression>']+[expressions]+['</expression>'], tokens[i:]
+
+def expression_list(tokens, ender):
+    ''''''
+    if tokens[0]['val'] in ender:
+        return ['<expressionList>', '</expressionList>'], tokens
+    else:
+        expressions = []
+        i = -1
+        while tokens:
+            i += 1
+            t = tokens[i]
+            if t['val'] not in ender:
+                expres, tokens = expression(tokens, [',']+ender)
+                expressions.append(expres)
+                if tokens[0]['val'] == ',':
+                    expressions.append(xml_token(tokens[0]))
+                    tokens = tokens[1:]
+                i = -1
+            else:
+                break
+        return ['<expressionList>']+[expressions]+['</expressionList>'], tokens[i:]
+
 
 def parse_do(tokens):
     '''
     '''
     r = [xml_token(tokens[0])] #Get that "do" in there
-    i = 0
+    i = 1
     for t in tokens[1:]:
         i += 1
         if not t['val'] == '(':
             r.append(xml_token(t))
         else:
-            pl, tokens = param_list(tokens[i:])
-            r = r + pl + [xml_token(tokens[0])]
+            r.append(xml_token(t))
+            pl, tokens = expression_list(tokens[i:], [')'])
+            r = r + pl + [xml_token(tokens[0]), xml_token(tokens[1])]
             break
-
-    return ['<doStatement']+[r]+['</doStatement>'], tokens[1:]
+    return ['<doStatement>']+[r]+['</doStatement>'], tokens[2:]
 
 def parse_return(tokens):
     '''
     '''
     r = []
+    #case, 'return;'
     if tokens[1]['val'] == ';': #Then its 'return;' so...
         r = [xml_token(tokens[0]), xml_token(tokens[1])]
         tokens = tokens[2:]
+    #case, return has expression.
+    else:
+        r = [xml_token(tokens[0])]
+        #Get the expression, ending with ;
+        er, tokens = expression(tokens[1:], [';'])
+        r = r + er + [xml_token(tokens[0])]
+        tokens = tokens[1:]
     return ['<returnStatement>']+[r]+['</returnStatement>'], tokens
 
-def parse_if(tokens):
+def parse_if(tokens, tag='ifStatement'):
     '''
     '''
-    r = []
+    def add_statement(xs):
+        '''given a list of tokens, add statement tags after { and before }'''
+        f = xs[0]
+        l = xs[-1:][0]
+        rest = xs[1:-1]
+        return [f] + ['<statements>'] + [rest] + ['</statements>'] + [l]
+    r = [
+        xml_token(tokens[0]),
+        xml_token(tokens[1])]
+    el, tokens = expression(tokens[2:], [')'])
 
+    r = r + el + [xml_token(tokens[0])]
+    il, tokens = parse_inner(tokens[1:])
+    r = r + add_statement(il)
 
-    return ['<ifStatement>'] + [r] + ['</ifStatement>'], tokens
+    if not tokens[0]['val'] == 'else':
+        return ['<'+tag+'>'] + [r] + ['</'+tag+'>'], tokens
+    else:
+        r.append(xml_token(tokens[0]))
+        il, tokens = parse_inner(tokens[1:])
+        return ['<'+tag+'>'] + [r + add_statement(il)] + ['</'+tag+'>'], tokens
 
 #Saved a file and tokenized as a XML.
 def save_xml(file, xml):
@@ -325,8 +473,8 @@ def save_xml(file, xml):
                     r = r + r_xml(x, i+1)
             return r
 
-    print(r_xml(xml, 0))
-    print('stuff')
+    with open(file, 'w') as text_file:
+        text_file.write(r_xml(xml, 0))
 
 #Given paths, get all .jack files.
 def get_all_files(paths):
@@ -350,21 +498,25 @@ def get_all_files(paths):
             print("Not Found: " + arg)
     return files
 
+def xml_files(files):
+    r = []
+    for file in files:
+        r.append(file[:-5] + '2.xml')
+    return r
+
 if __name__ == '__main__':
     print("Now running NAND Project 10.")
     
     #Get all files from the arguments. (If folder get .jack in that folder)
     args = sys.argv[1:]
     files = get_all_files(args)
-
     #Tokenize every file
     #tokenized_files = map(tokenize, files)
     cleaned_files = map(clean_file, files)
     tokenized_files = map(tokenize, cleaned_files)
     xml_ready = map(token_parser, tokenized_files)
-    #for item in list(tokenized_files)[0]:
-    #    print(item)
-    save_xml('', list(xml_ready)[0])
+    for file, xml in zip(xml_files(files), xml_ready):
+        save_xml(file, xml)
     #Save every tokenized file as a xml
     #for file, tokenized in zip(files, tokenized_files):
     #    save_xml(file, tokenized)
