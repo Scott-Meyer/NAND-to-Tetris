@@ -9,13 +9,24 @@
  */
 class Math {
 
+    static Math2 math;
+
     /** Initializes the library. */
     function void init() {
+        let math = Math2.new();
+        return;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+        if (x > 0) {
+            return x;
+        }
+        else {
+            return -x;
+        }
     }
+
 
     /** Returns the product of x and y. 
      *  When a Jack compiler detects the multiplication operator '*' in the 
@@ -23,6 +34,25 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
+        var int ret;
+        var int i;
+        var int ay;
+        let i = 0;
+        let ret = 0;
+        let ay = math.abs(y);
+        /* Add x to itself y times (using absolute val to get around -y) */
+        while (ay > 0) {
+            let ret = ret + x;
+            let ay = ay - 1;
+        }
+
+        /* Account for -y, return ret or -ret */
+        if (y > 0) {
+            return ret;
+        }
+        else {
+            return -ret;
+        }
     }
 
     /** Returns the integer part of x/y.
@@ -31,17 +61,67 @@ class Math {
      *  the Jack expressions x/y and divide(x,y) return the same value.
      */
     function int divide(int x, int y) {
+        var int ret;
+        var int ax;
+        var int ay;
+        let ax = math.abs(x);
+        let ay = math.abs(y);
+        let ret = 0;
+
+        /*subtract y from x as many times as we can and keep track of it */
+        while ((ax > ay) | (ax = ay))
+        {
+            let ax = ax - ay;
+            let ret = ret + 1;
+        }
+
+        /* Handle the negatives and positives. */
+        if ((x > -1) & (y > -1)) {
+            return ret;
+        }
+        else {
+            if ((x < 0) & (y < 0)) {
+                return ret;
+            }
+            else {
+                return -ret;
+            }
+        }
     }
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+        var int ret;
+        var int square;
+        var int squared;
+        let ret = 0;
+        let square = -1;
+        let squared = 0;
+
+        while ((squared < x) | (squared = x)) {
+            let square = square + 1;
+            let squared = math.multiply(square, square);
+        }
+        return square - 1;
     }
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+        if ((a > b) | (a = b)) {
+            return a;
+        }
+        else {
+            return b;
+        }
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+        if ((a > b) | (a = b)) {
+            return b;
+        }
+        else {
+            return a;
+        }
     }
 }

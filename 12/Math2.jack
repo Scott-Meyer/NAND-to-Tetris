@@ -1,0 +1,51 @@
+/* 
+
+Can't figure out how to make a variable = to return of a function within math
+
+*/
+
+class Math2 {
+
+    /** Initializes the library. */
+    function void init() {
+        return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+        if (x > 0) {
+            return x;
+        }
+        else {
+            return -x;
+        }
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+        var int ret;
+        var int i;
+        var int ay;
+        let i = 0;
+        let ret = 0;
+        let ay = math.abs(y);
+        /* Add x to itself y times (using absolute val to get around -y) */
+        while (ay > 0) {
+            let ret = ret + x;
+            let ay = ay - 1;
+        }
+
+        /* Account for -y, return ret or -ret */
+        if (y > 0) {
+            return ret;
+        }
+        else {
+            return -ret;
+        }
+    }
+
+}

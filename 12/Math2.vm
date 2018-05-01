@@ -1,0 +1,56 @@
+function Math2.init 0
+push constant 0
+return
+function Math2.abs 0
+push argument 0
+push constant 0
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push argument 0
+return
+goto IF_END0
+label IF_FALSE0
+push argument 0
+neg
+return
+label IF_END0
+function Math2.multiply 3
+push constant 0
+pop local 1
+push constant 0
+pop local 0
+push argument 1
+call math.abs 1
+pop local 2
+label WHILE_EXP0
+push local 2
+push constant 0
+gt
+not
+if-goto WHILE_END0
+push local 0
+push argument 0
+add
+pop local 0
+push local 2
+push constant 1
+sub
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push argument 1
+push constant 0
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push local 0
+return
+goto IF_END0
+label IF_FALSE0
+push local 0
+neg
+return
+label IF_END0
